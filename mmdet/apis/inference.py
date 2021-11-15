@@ -211,7 +211,8 @@ def show_result_ins(img,
                     class_names,
                     score_thr=0.3,
                     sort_by_density=False,
-                    out_file=None):
+                    out_file=None,
+                    out_human_mask=False):
     """Visualize the instance segmentation results on the image.
 
     Args:
@@ -265,8 +266,25 @@ def show_result_ins(img,
         np.random.randint(0, 256, (1, 3), dtype=np.uint8)
         for _ in range(num_mask)
     ]
+
+    if out_human_mask:
+        human_mask = np.zeros((w, h))
+
     for idx in range(num_mask):
         idx = -(idx+1)
+
+        cur_cate = cate_label[idx]
+        cur_score = cate_score[idx]
+
+        if out_human_mask:
+            if cur_cate == 0:
+                cur_mask = seg_label[idx, :, :]
+                cur_mask = mmcv.imresize(cur_mask, (w, h))
+                cur_mask = (cur_mask > 0.5).astype(np.uint8)
+                cur_mask_bool = cur_mask.astype(np.bool)
+                human_mask = human_mask | cur_mask_bool
+
+
         cur_mask = seg_label[idx, :, :]
         cur_mask = mmcv.imresize(cur_mask, (w, h))
         cur_mask = (cur_mask > 0.5).astype(np.uint8)
@@ -276,15 +294,14 @@ def show_result_ins(img,
         cur_mask_bool = cur_mask.astype(np.bool)
         img_show[cur_mask_bool] = img[cur_mask_bool] * 0.5 + color_mask * 0.5
 
-        cur_cate = cate_label[idx]
-        cur_score = cate_score[idx]
         label_text = class_names[cur_cate]
-        #label_text += '|{:.02f}'.format(cur_score)
+        label_text += '|{:.02f}'.format(cur_score)
         center_y, center_x = ndimage.measurements.center_of_mass(cur_mask)
         vis_pos = (max(int(center_x) - 10, 0), int(center_y))
-        cv2.putText(img_show, label_text, vis_pos,
-                        cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 255))  # green
+        cv2.putText(img_show, label_text, vis_pos, cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 255))  # green
     if out_file is None:
+        if out_human_mask:
+            return human_mask
         return img_show
     else:
         mmcv.imwrite(img_show, out_file)
