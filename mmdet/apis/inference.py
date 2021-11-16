@@ -282,7 +282,7 @@ def show_result_ins(img,
                 cur_mask = mmcv.imresize(cur_mask, (w, h))
                 cur_mask = (cur_mask > 0.5).astype(np.uint8)
                 cur_mask_bool = cur_mask.astype(np.bool)
-                human_mask = human_mask | cur_mask_bool
+                human_mask = np.logical_or(human_mask, cur_mask_bool)
 
 
         cur_mask = seg_label[idx, :, :]
@@ -301,7 +301,7 @@ def show_result_ins(img,
         cv2.putText(img_show, label_text, vis_pos, cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 255))  # green
     if out_file is None:
         if out_human_mask:
-            return human_mask
+            return human_mask.astype(np.uint8) * 255
         return img_show
     else:
         mmcv.imwrite(img_show, out_file)
