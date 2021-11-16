@@ -268,7 +268,7 @@ def show_result_ins(img,
     ]
 
     if out_human_mask:
-        human_mask = np.zeros((w, h))
+        human_mask = np.zeros((h, w))
 
     for idx in range(num_mask):
         idx = -(idx+1)
